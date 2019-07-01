@@ -1,0 +1,44 @@
+#:kivy 1.11.1
+
+<GriddedScreen>:
+    size_hint_min_y: 200
+    GridLayout:
+        cols:2
+        size: root.width, root.height
+
+        GridLayout:
+            id: buttonsGroup
+            orientation: 'vertical'
+            rows:3
+            size_hint_x: None
+            width: 250
+            
+            Button:
+                id: startEndButton
+                text: 'START'
+                font_size: '50'
+                on_release: root.startEndPace()
+            Button:
+                text: "FTR'd"
+                font_size: '50'
+                on_release: root.FTRnow()
+            TextInput:
+                id: optionalCaseNum
+                font_size: '30'
+                text: 'Type case # here (opt)'
+        
+        
+        GridLayout:
+            orientation: 'vertical'
+            rows:2
+            # size_hint_x: None
+            # width: root.width - buttonsGroup.width
+            Label:
+                id: timeText
+                font_size: '50'
+                size_hint_y: None
+                height: 80
+                text: '10:00'
+            Label:
+                id: statsText
+                text: 'Press START to begin pace with 10 min intervals'
