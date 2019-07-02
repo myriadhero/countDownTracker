@@ -32,14 +32,14 @@
                 id: optionalCaseNum
                 size_hint_y: None
                 multiline: False
-                height: 40
+                height: 35
                 font_size: '15'
                 text: '########'
         
         
         GridLayout:
             orientation: 'vertical'
-            rows:2
+            rows:3
             # size_hint_x: None
             # width: root.width - buttonsGroup.width
             Label:
@@ -48,6 +48,11 @@
                 size_hint_y: None
                 height: 80
                 text: '10:00'
+            Label:
+                id: middleStatsText
+                size_hint_y: None
+                height: 40
+                text: f'Set Pace: {root.time2string(root.initialClockCounter)}  |  Average Pace: 00:00  |  Banked Time: 00:00'
             Label:
                 id: statsText
                 text: 'Press START to begin pace with 10 min intervals'
