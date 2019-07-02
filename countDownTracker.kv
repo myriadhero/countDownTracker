@@ -9,7 +9,7 @@
         GridLayout:
             id: buttonsGroup
             orientation: 'vertical'
-            rows:3
+            rows:4
             size_hint_x: None
             width: 250
             
@@ -19,13 +19,22 @@
                 font_size: '50'
                 on_release: root.startEndPace()
             Button:
-                text: "FTR'd"
+                id: ftrButton
+                text: "###"
                 font_size: '50'
                 on_release: root.FTRnow()
+            Label:
+                size_hint_y: None
+                height: 20
+                font_size: '15'
+                text: 'Input case number below (optional)'
             TextInput:
                 id: optionalCaseNum
-                font_size: '30'
-                text: 'Type case # here (opt)'
+                size_hint_y: None
+                multiline: False
+                height: 40
+                font_size: '15'
+                text: '########'
         
         
         GridLayout:

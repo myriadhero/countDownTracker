@@ -9,6 +9,7 @@ from kivy.clock import Clock
 
 import random
 import datetime
+import os
 
 
 # layout and methods
@@ -21,7 +22,12 @@ class GriddedScreen(Widget):
     is_idle = True
 
     # output file path
-    outFile = ''
+    outFileFolder = 'C:\\temp\\slapace'
+    outFileName = '_slapace'
+    outFileExt = '.csv'
+
+    # cases FTRd so far, average case FTR time, avalable time in this session
+    
     
     # convert timer counter to human readable string
     def time2string(self, *args):
@@ -34,53 +40,92 @@ class GriddedScreen(Widget):
         self.clockCounter -= 1
         self.ids.timeText.text = self.time2string()
 
+    def refreshCountDown(self, *args):
+        self.clockCounter = self.initialClockCounter
+        self.ids.timeText.text = self.time2string()
+
     # when start is performed
     def startPace(self, *args):
         # schedule clock event
         Clock.schedule_interval(self.countDown, 1)
         # change button text
         self.ids.startEndButton.text = 'END'
-
+        self.ids.ftrButton.text = "FTR"
         # change stats text
-        self.statsString = 'Press FTRd to record your intervals for this session\n'
+        self.statsString = 'Press FTR to record your intervals for this session\n'
         self.ids.statsText.text = self.statsString
 
     # when ftr button is pressed
     def FTRnow(self, *args):
-        
+        # if idle = do nothing
+        if self.is_idle:
+            return
+
+
         # get time it took
-        timeTook = self.initialClockCounter - self.clockCounter
+        timeTook = self.time2string(self.initialClockCounter - self.clockCounter)
+        
         # get the time stamp
         timeNow = datetime.datetime.now()
-        # get the case num
-        caseNum = self.ids.optionalCaseNum.text
-
-        # dump the data
-        #   open the file for reading
         
+        # get the case num
+        caseNum = ''
+        try:
+            caseNum = f"{(int(self.ids.optionalCaseNum.text)):>08}"
+            self.ids.optionalCaseNum.text = '########'
+        except ValueError:
+            caseNum = '00000000'
+
+        str2write = f"{timeNow.strftime('%Y %b %d %H %M %S')}, {timeTook}, {caseNum}\n"
 
 
-        #write time
-        self.statsString += f"{self.time2string(timeTook)}\n"
+        #write time to app
+        self.statsString += f"{timeTook}"
         self.ids.statsText.text = self.statsString
         
-
         # refresh timer last
-        self.clockCounter = self.initialClockCounter
-        self.ids.timeText.text = self.time2string()
+        self.refreshCountDown()
+
+        # dump the data
+        # get target file name
+        targetFile = os.path.join(self.outFileFolder, timeNow.strftime("%Y%b%d")+ self.outFileName + self.outFileExt)
+        # check if folder path exists
+        if not os.path.exists(self.outFileFolder):
+            try:
+                os.makedirs(self.outFileFolder)
+            except OSError as ose:
+                self.statsString += f"There was an error creating {self.outFileFolder}, {ose}\n"
+                self.ids.statsText.text = self.statsString
+        else:
+            self.statsString += f"Path exists, writing to {self.outFileFolder}\n"
+            self.ids.statsText.text = self.statsString
+        
+        #check if file can be opened
+        try:
+            f = open(targetFile, "a")
+        except IOError as ioe:
+            self.statsString += f"There was an error opening {targetFile}, {ioe}\n"
+            self.ids.statsText.text = self.statsString
+        # open the file and appent the data
+        else:
+            with open(targetFile, "a") as f:
+                f.write(str2write)
+                self.statsString += f" >> written to {os.path.split(targetFile)[1]}\n"
+                self.ids.statsText.text = self.statsString
 
 
     # when the END button is clicked
     def endPace(self, *args):
-        # one last FTR, refreshes the clock too
-        self.FTRnow()
+        # unschedule clock
+        Clock.unschedule(self.countDown)
         
+        # no FTR, refresh clock
+        self.ids.ftrButton.text = "###"
+        self.refreshCountDown()
+
         # clear the string
         self.statsString += 'Press START to begin pace with 10 min intervals\n'
         self.ids.statsText.text = self.statsString
-
-        # unschedule clock
-        Clock.unschedule(self.countDown)
 
         # change button text
         self.ids.startEndButton.text = 'START'
