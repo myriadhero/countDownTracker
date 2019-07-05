@@ -20,14 +20,14 @@
                 on_release: root.startEndPace()
             Button:
                 id: ftrButton
-                text: "###"
+                text: "FTR idle"
                 font_size: '50'
                 on_release: root.FTRnow()
             Label:
                 size_hint_y: None
                 height: 20
                 font_size: '15'
-                text: 'Input case number below (optional)'
+                text: 'Input case number below (required)'
             TextInput:
                 id: optionalCaseNum
                 size_hint_y: None
@@ -47,7 +47,7 @@
                 font_size: '50'
                 size_hint_y: None
                 height: 80
-                text: '10:00'
+                text: root.time2string(root.initialClockCounter)
             Label:
                 id: middleStatsText
                 size_hint_y: None

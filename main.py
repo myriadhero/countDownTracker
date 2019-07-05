@@ -11,11 +11,15 @@ import random
 import datetime
 import os
 
+# ToDo: add slider/selection for timer
+# ToDo: add progress bar
+# ToDo: add scrolling to text block
+
 
 # layout and methods
 class GriddedScreen(Widget):
     # using this variable so I don't have to modify it everywhere, hopefully it doesn't just become a pointer :P
-    initialClockCounter = 600
+    initialClockCounter = 480
     clockCounter = initialClockCounter
     statsString = ''
     # app state started/ended
@@ -35,13 +39,13 @@ class GriddedScreen(Widget):
     # convert timer counter to human readable string
     def time2string(self, *args):
         
-        time2disp = args[0]
+        time2disp = int(args[0])
         str2return = ''
         if time2disp < 0: # add negative sign
             str2return += '-'
         time2disp = abs(time2disp)
         if len(args):
-            return f"{time2disp // 60:>02}:{time2disp % 60:>02}"
+            return str2return + f"{time2disp // 60:>02}:{time2disp % 60:>02}"
         else:
             return '00:00'
         
@@ -56,6 +60,30 @@ class GriddedScreen(Widget):
         self.clockCounter = self.initialClockCounter
         self.ids.timeText.text = self.time2string(self.clockCounter)
 
+
+    def updateStatsText(self, str2write, clearOutput = False, *args):
+        if clearOutput:
+            self.statsString = ''
+        self.statsString += str2write
+        # update element
+        self.ids.statsText.text = self.statsString
+
+
+    def dumpData(self, targetFile, str2write, *args):
+        # folder path is checked on start
+        #check if file can be opened
+        try:
+            f = open(targetFile, "a")
+        except IOError as ioe:
+            self.updateStatsText(f"There was an error opening {targetFile}, {ioe}\n")
+            return False
+        # open the file and appent the data
+        else:
+            with open(targetFile, "a") as f:
+                f.write(str2write)
+                return True
+
+
     # when start is performed
     def startPace(self, *args):
         # schedule clock event
@@ -65,22 +93,18 @@ class GriddedScreen(Widget):
         self.ids.ftrButton.text = "FTR"
 
         # update stats text
-        self.statsString = 'Press FTR to record your intervals for this session\n\n'
-        self.ids.statsText.text = self.statsString
+        self.updateStatsText('Press FTR to record your intervals for this session\n\n', clearOutput=True)
 
 
         # check if folder path exists
         if not os.path.exists(self.outFileFolder):
             try:
                 os.makedirs(self.outFileFolder)
-                self.statsString += f"Path didn't exist, created {self.outFileFolder}\n"
-                self.ids.statsText.text = self.statsString
+                self.updateStatsText(f"Path didn't exist, created {self.outFileFolder}\n")
             except OSError as ose:
-                self.statsString += f"There was an error creating {self.outFileFolder}, {ose}\n"
-                self.ids.statsText.text = self.statsString
+                self.updateStatsText(f"There was an error creating {self.outFileFolder}, {ose}\n")
         else:
-            self.statsString += f"Path exists, writing to {self.outFileFolder}\n"
-            self.ids.statsText.text = self.statsString
+            self.updateStatsText(f"Path exists, writing to {self.outFileFolder}\n")
         
         # change program state to active!
         self.is_idle = False
@@ -88,85 +112,84 @@ class GriddedScreen(Widget):
 
     # when ftr button is pressed
     def FTRnow(self, *args):
-        # if idle = do nothing
-        if self.is_idle:
-            return
+        """
+        The convenient behaviour:
+        - require case
+        - can SLA without being in active state -> record time as 00:00
 
+        """
+        #change the countdown timer colour for fun :P
+        self.ids.timeText.color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 1]
+
+        # commented this out because want to be able to FTR without being in active state to be able to keep track of 
+        # tickets that got SLAd by me overall
+        # # if idle = do nothing 
+        # if self.is_idle:
+        #     return
         
-        # increase ftrdCounter
-        self.ftrdCounter += 1
-
-        # get time it took
-        timeTook = self.time2string(self.initialClockCounter - self.clockCounter)
-        
-        # addup total time spent
-        self.bankedUpTime += self.clockCounter
-        self.totalTimeSpentOnFtr += self.initialClockCounter - self.clockCounter
-
-        # get average time took
-        self.averageFTRtime = self.totalTimeSpentOnFtr/self.ftrdCounter
-
-        # update middle stats in the APP
-        self.ids.middleStatsText.text = f'Set Pace: {self.time2string(self.initialClockCounter)}  |  Average Pace: {self.time2string(int(self.averageFTRtime))}  |  Banked Time: {self.time2string(self.bankedUpTime)}'
-
-        # get the time stamp
-        timeNow = datetime.datetime.now()
-        
-        # get the case num
+        # get the case num, require it
         caseNum = ''
         try:
             caseNum = f"{(int(self.ids.optionalCaseNum.text)):>08}"
             self.ids.optionalCaseNum.text = '########'
         except ValueError:
-            caseNum = '00000000'
+            caseNum = '0'
+        # if failed to collect a valid number, just return
+        if caseNum == '0':
+            return
+        
+        # stats shouldn't increase in idle state
+        if not self.is_idle:
+            # increase ftrdCounter
+            self.ftrdCounter += 1
+            # addup total time spent
+            self.bankedUpTime += self.clockCounter
+            self.totalTimeSpentOnFtr += self.initialClockCounter - self.clockCounter
+            # get average time took
+            self.averageFTRtime = self.totalTimeSpentOnFtr/self.ftrdCounter
+            # update middle stats in the APP
+            self.ids.middleStatsText.text = f'Set Pace: {self.time2string(self.initialClockCounter)}  |  Average Pace: {self.time2string(int(self.averageFTRtime))}  |  Banked Time: {self.time2string(self.bankedUpTime)}'
 
-        str2write = f"{timeNow.strftime('%Y %b %d %H:%M:%S')}, {timeTook}, {caseNum}\n"
 
+        # get time it took, should not be negative because clockCounter should always be < initialClockCounter
+        timeTook = self.time2string(self.initialClockCounter - self.clockCounter)
+        
+        # get the time stamp
+        timeNow = datetime.datetime.now()
 
-        #write time to app
-        self.statsString += f"{timeNow.strftime('%H:%M:%S')} >> {timeTook}"
-        self.ids.statsText.text = self.statsString
+        # write time to app
+        self.updateStatsText(f"{timeNow.strftime('%H:%M:%S')} >> {timeTook}")
         
         # refresh timer last
         self.refreshCountDown()
+        
+        # string for csv format dump
+        str2write = f"{timeNow.strftime('%Y %b %d %H:%M:%S')}, {timeTook}, {caseNum}\n"
 
         # dump the data
         # get target file name
         targetFile = os.path.join(self.outFileFolder, timeNow.strftime("%Y%b%d")+ self.outFileName + self.outFileExt)
         
-        # folder path is checked on start
-        #check if file can be opened
-        try:
-            f = open(targetFile, "a")
-        except IOError as ioe:
-            self.statsString += f"There was an error opening {targetFile}, {ioe}\n"
-            self.ids.statsText.text = self.statsString
-        # open the file and appent the data
-        else:
-            with open(targetFile, "a") as f:
-                f.write(str2write)
-                self.statsString += f" >> {caseNum} >> written to {os.path.split(targetFile)[1]}\n"
-                self.ids.statsText.text = self.statsString
-
+        if self.dumpData(targetFile,str2write):
+            self.updateStatsText(f" >> {caseNum} >> written to {os.path.split(targetFile)[1]}\n")
+   
+        if self.ftrdCounter > 5:
+            self.updateStatsText(f"FTRd {self.ftrdCounter} cases already! What a beast! Consider stretching or taking a break.\n")
 
     # when the END button is clicked
     def endPace(self, *args):
         # unschedule clock
         Clock.unschedule(self.countDown)
         
-        # FTR if it took more than 30 sec to end, just in case, refresh clock
-        if self.clockCounter < self.initialClockCounter - 30:
-            self.FTRnow()
-        else:
-            self.refreshCountDown()
+        # no FTR, refresh timer
+        self.refreshCountDown()
         # 'disable' FTR button
-        self.ids.ftrButton.text = "###"
+        self.ids.ftrButton.text = "FTR idle"
 
         # write end string
-        self.statsString += '\nThis session:' + f'\nFTRd: {self.ftrdCounter}\nAverage Pace: {self.time2string(int(self.averageFTRtime))}\nBanked Time: {self.time2string(self.bankedUpTime)}\n'
+        self.updateStatsText('\nThis session:' + f'\nFTRd: {self.ftrdCounter}\nAverage Pace: {self.time2string(int(self.averageFTRtime))}\nBanked Time: {self.time2string(self.bankedUpTime)}\n')
 
-        self.statsString += '\nPress START to begin pace with 10 min intervals\n'
-        self.ids.statsText.text = self.statsString
+        self.updateStatsText('\nPress START to begin pace with 10 min intervals\n')
 
         # change button text
         self.ids.startEndButton.text = 'START'
@@ -181,9 +204,7 @@ class GriddedScreen(Widget):
         
     # this method is triggered by startEndButton, so one button can call 2 methods depending on program state
     def startEndPace(self, *args):
-        #change the countdown timer colour for fun :P
-        self.ids.timeText.color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 1]
-
+        
         if self.is_idle:
             self.startPace()
         else:
