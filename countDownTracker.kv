@@ -30,6 +30,7 @@
                 text: 'Input case number below (required)'
             TextInput:
                 id: optionalCaseNum
+                on_text_validate: root.FTRnow()
                 size_hint_y: None
                 multiline: False
                 height: 35
@@ -39,7 +40,7 @@
         
         GridLayout:
             orientation: 'vertical'
-            rows:3
+            rows:4
             # size_hint_x: None
             # width: root.width - buttonsGroup.width
             Label:
@@ -48,11 +49,24 @@
                 size_hint_y: None
                 height: 80
                 text: root.time2string(root.initialClockCounter)
+            Slider:
+                id: slidr
+                size_hint_y: None
+                height: 20
+                min: 120
+                max: 1200
+                value: root.initialClockCounter
+                on_value: root.changeInitClock()
             Label:
                 id: middleStatsText
                 size_hint_y: None
                 height: 40
                 text: f'Set Pace: {root.time2string(root.initialClockCounter)}  |  Average Pace: 00:00  |  Banked Time: 00:00'
-            Label:
-                id: statsText
-                text: 'Press START to begin pace with 10 min intervals'
+            ScrollView:
+                Label:
+                    id: statsText
+                    padding: 50,50
+                    text_size: self.width, None
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    text: 'Press START to begin pace with 10 min intervals'

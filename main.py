@@ -11,9 +11,9 @@ import random
 import datetime
 import os
 
-# ToDo: add slider/selection for timer
-# ToDo: add progress bar
-# ToDo: add scrolling to text block
+# low priority:
+    # ToDo: add progress bar
+    # toDo: add pause behaviour
 
 
 # layout and methods
@@ -209,6 +209,14 @@ class GriddedScreen(Widget):
             self.startPace()
         else:
             self.endPace()
+    
+    def changeInitClock(self, *args):
+        if self.is_idle:
+            # round to nearest 10 sec
+            self.initialClockCounter = (int(self.ids.slidr.value)//10) *10
+            self.refreshCountDown()
+            self.ids.middleStatsText.text = f'Set Pace: {self.time2string(self.initialClockCounter)}  |  Average Pace: {self.time2string(int(self.averageFTRtime))}  |  Banked Time: {self.time2string(self.bankedUpTime)}'
+
 
     
 
