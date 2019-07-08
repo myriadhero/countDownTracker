@@ -20,15 +20,18 @@ import os
 class GriddedScreen(Widget):
     # using this variable so I don't have to modify it everywhere, hopefully it doesn't just become a pointer :P
     initialClockCounter = 480
+    breaktime = 1800 #~30 min
     clockCounter = initialClockCounter
     statsString = ''
     # app state started/ended
     is_idle = True
+    is_fileCreated = False
 
     # output file path
     outFileFolder = 'C:\\temp\\slapace'
     outFileName = '_slapace'
     outFileExt = '.csv'
+    targetFile = ''
 
     # cases FTRd so far, average case FTR time, avalable time in this session
     ftrdCounter = 0
@@ -81,6 +84,8 @@ class GriddedScreen(Widget):
         else:
             with open(targetFile, "a") as f:
                 f.write(str2write)
+                if not self.is_fileCreated:
+                    self.is_fileCreated = True
                 return True
 
 
@@ -169,12 +174,13 @@ class GriddedScreen(Widget):
         # dump the data
         # get target file name
         targetFile = os.path.join(self.outFileFolder, timeNow.strftime("%Y%b%d")+ self.outFileName + self.outFileExt)
-        
+        self.targetFile = targetFile
+
         if self.dumpData(targetFile,str2write):
             self.updateStatsText(f" >> {caseNum} >> written to {os.path.split(targetFile)[1]}\n")
    
-        if self.ftrdCounter > 5:
-            self.updateStatsText(f"FTRd {self.ftrdCounter} cases already! What a beast! Consider stretching or taking a break.\n")
+        if self.totalTimeSpentOnFtr > self.breaktime: #pomodoro
+            self.updateStatsText(f"FTRd for {self.time2string(self.totalTimeSpentOnFtr)}. Consider stretching or taking a break.\n")
 
     # when the END button is clicked
     def endPace(self, *args):
@@ -189,10 +195,21 @@ class GriddedScreen(Widget):
         # write end string
         self.updateStatsText('\nThis session:' + f'\nFTRd: {self.ftrdCounter}\nAverage Pace: {self.time2string(int(self.averageFTRtime))}\nBanked Time: {self.time2string(self.bankedUpTime)}\n')
 
-        self.updateStatsText('\nPress START to begin pace with 10 min intervals\n')
+        
 
         # change button text
         self.ids.startEndButton.text = 'START'
+
+        # output FTRd today
+        if self.is_fileCreated:
+            with open(self.targetFile, "r") as f:
+                numFtrd = 0
+                for _ in f.readlines():
+                    numFtrd +=1
+                self.updateStatsText(f'FTRd today: {numFtrd}\n')
+        # new stuff
+        self.updateStatsText('\nPress START to begin pace with 10 min intervals\n')        
+            
 
         # change program state to idle
         self.is_idle = True
