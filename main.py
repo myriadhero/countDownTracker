@@ -1,18 +1,13 @@
-import kivy
 from kivy.app import App
-# from kivy.uix.gridlayout import GridLayout
-# from kivy.uix.label import Label
-# from kivy.uix.textinput import TextInput
-# from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
 
-import random
-import datetime
-import os
+from random import randint
+from datetime import datetime
+from os import path
+from os import makedirs
 
 # low priority:
-    # ToDo: add progress bar
     # toDo: add pause behaviour
 
 
@@ -102,9 +97,9 @@ class GriddedScreen(Widget):
 
 
         # check if folder path exists
-        if not os.path.exists(self.outFileFolder):
+        if not path.exists(self.outFileFolder):
             try:
-                os.makedirs(self.outFileFolder)
+                makedirs(self.outFileFolder)
                 self.updateStatsText(f"Path didn't exist, created {self.outFileFolder}\n")
             except OSError as ose:
                 self.updateStatsText(f"There was an error creating {self.outFileFolder}, {ose}\n")
@@ -124,7 +119,7 @@ class GriddedScreen(Widget):
 
         """
         #change the countdown timer colour for fun :P
-        self.ids.timeText.color = [random.randint(0,255), random.randint(0,255), random.randint(0,255), 1]
+        self.ids.timeText.color = [randint(0,255), randint(0,255), randint(0,255), 1]
 
         # commented this out because want to be able to FTR without being in active state to be able to keep track of 
         # tickets that got SLAd by me overall
@@ -160,7 +155,7 @@ class GriddedScreen(Widget):
         timeTook = self.time2string(self.initialClockCounter - self.clockCounter)
         
         # get the time stamp
-        timeNow = datetime.datetime.now()
+        timeNow = datetime.now()
 
         # write time to app
         self.updateStatsText(f"{timeNow.strftime('%H:%M:%S')} >> {timeTook}")
@@ -173,11 +168,11 @@ class GriddedScreen(Widget):
 
         # dump the data
         # get target file name
-        targetFile = os.path.join(self.outFileFolder, timeNow.strftime("%Y%b%d")+ self.outFileName + self.outFileExt)
+        targetFile = path.join(self.outFileFolder, timeNow.strftime("%Y%b%d")+ self.outFileName + self.outFileExt)
         self.targetFile = targetFile
 
         if self.dumpData(targetFile,str2write):
-            self.updateStatsText(f" >> {caseNum} >> written to {os.path.split(targetFile)[1]}\n")
+            self.updateStatsText(f" >> {caseNum} >> written to {path.split(targetFile)[1]}\n")
    
         if self.totalTimeSpentOnFtr > self.breaktime: #pomodoro
             self.updateStatsText(f"FTRd for {self.time2string(self.totalTimeSpentOnFtr)}. Consider stretching or taking a break.\n")
